@@ -1,233 +1,313 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="utf-8">
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="color-scheme" content="dark">
-<meta name="theme-color" content="#050913">
-<meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'unsafe-inline' https://unpkg.com; style-src 'unsafe-inline' https://unpkg.com; img-src 'self' data: https://tile.openstreetmap.org https://*.tile.openstreetmap.org; connect-src https: http://localhost:* http://127.0.0.1:*; object-src 'none'; base-uri 'none'; frame-src 'none'">
+<meta name="theme-color" content="#070d1a">
+<meta name="description" content="IMEI Locator — pusat pemulihan dan pengamanan perangkat Android.">
 <title>IMEI Locator — Device Recovery Center</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 <style>
-:root{
-  --bg:#050913;--navy:#0a1630;--navy2:#0d1d40;--card:rgba(14,28,58,.58);--card2:rgba(20,38,78,.5);
-  --line:rgba(110,160,255,.16);--line2:rgba(110,160,255,.3);
-  --blue:#2f6bff;--blue2:#5b8dff;--cyan:#22d3ee;--text:#e8f0ff;--muted:#93a4c4;
-  --ok:#34d399;--warn:#fbbf24;--err:#fb7185;
-  --r:18px;--shadow:0 10px 40px rgba(0,0,0,.45);
-  --font:"Segoe UI",Roboto,"Helvetica Neue",Arial,system-ui,-apple-system,sans-serif;
-  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-}
-*{box-sizing:border-box;margin:0}
-html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
-body{font-family:var(--font);color:var(--text);background:var(--bg);min-height:100vh;line-height:1.55;
-  background-image:radial-gradient(900px 500px at 85% -10%,rgba(47,107,255,.28),transparent 60%),
-  radial-gradient(700px 420px at -10% 10%,rgba(34,211,238,.14),transparent 60%),
-  linear-gradient(rgba(110,160,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(110,160,255,.04) 1px,transparent 1px);
-  background-size:auto,auto,44px 44px,44px 44px;background-attachment:fixed;padding-bottom:84px}
-a{color:var(--cyan)}
-.ic{width:1.25em;height:1.25em;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
-.skip{position:absolute;left:-999px;top:8px;background:var(--cyan);color:#001018;padding:8px 14px;border-radius:10px;z-index:100}
-.skip:focus{left:8px}
-:focus-visible{outline:2px solid var(--cyan);outline-offset:2px;border-radius:8px}
-.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-
-/* header */
-.top{position:sticky;top:0;z-index:50;background:rgba(5,9,19,.78);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid var(--line)}
-.top-in{max-width:1200px;margin:auto;padding:12px 16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
-.brand{display:flex;align-items:center;gap:12px;min-width:0}
-.brand svg{width:42px;height:42px;filter:drop-shadow(0 0 10px rgba(34,211,238,.55))}
-.brand b{display:block;font-size:1.08rem;letter-spacing:.2px}
-.brand small{display:block;color:var(--cyan);font-size:.72rem;letter-spacing:.14em;text-transform:uppercase}
-.pills{display:flex;gap:8px;flex-wrap:wrap;margin-left:auto}
-.pill{display:inline-flex;align-items:center;gap:7px;font-size:.76rem;padding:6px 11px;border-radius:999px;border:1px solid var(--line2);background:var(--card2);color:var(--muted)}
-.pill i{width:8px;height:8px;border-radius:50%;background:var(--muted);display:inline-block}
-.pill.ok i{background:var(--ok);box-shadow:0 0 8px var(--ok)}.pill.ok{color:#bff5df}
-.pill.warn i{background:var(--warn);box-shadow:0 0 8px var(--warn)}.pill.warn{color:#fde8a8}
-.pill.err i{background:var(--err);box-shadow:0 0 8px var(--err)}.pill.err{color:#ffc9d2}
-.pill.info i{background:var(--blue2);box-shadow:0 0 8px var(--blue2)}.pill.info{color:#cddcff}
-.deskNav{display:none;gap:4px;width:100%}
-.nav-btn{display:inline-flex;align-items:center;gap:8px;background:none;border:1px solid transparent;color:var(--muted);padding:9px 14px;border-radius:12px;cursor:pointer;font:inherit;font-size:.9rem;transition:.2s}
-.nav-btn:hover{color:var(--text);background:var(--card2)}
-.nav-btn[aria-current=page]{color:#fff;background:linear-gradient(135deg,rgba(47,107,255,.5),rgba(34,211,238,.22));border-color:var(--line2);box-shadow:0 0 18px rgba(47,107,255,.35)}
-.icon-btn{margin-left:2px}
-@media(min-width:900px){.deskNav{display:flex;order:5}.bottom{display:none!important}body{padding-bottom:0}}
-.bottom{position:fixed;left:0;right:0;bottom:0;z-index:50;display:flex;justify-content:space-around;padding:6px 6px calc(6px + env(safe-area-inset-bottom));background:rgba(5,9,19,.9);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-top:1px solid var(--line)}
-.bottom .nav-btn{flex-direction:column;gap:3px;font-size:.68rem;padding:7px 8px;min-width:58px;min-height:48px}
-.bottom .nav-btn .ic{width:22px;height:22px}
-
-/* layout */
-main{max-width:1200px;margin:auto;padding:22px 16px 40px}
-.panel{display:none}
-.panel.active{display:block;animation:enter .38s cubic-bezier(.2,.8,.2,1)}
-.no-motion .panel.active{animation:none}
-@keyframes enter{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
-h1{font-size:clamp(1.5rem,4.5vw,2.3rem);line-height:1.2;letter-spacing:-.01em}
-h1 em{font-style:normal;background:linear-gradient(90deg,var(--blue2),var(--cyan));-webkit-background-clip:text;background-clip:text;color:transparent}
-h2{font-size:1.15rem;margin-bottom:4px}
-h3{font-size:1rem}
-.lead{color:var(--muted);max-width:760px;margin:8px 0 22px}
-.grid2{display:grid;gap:18px}
-.grid3{display:grid;gap:18px;margin-top:18px}
-@media(min-width:900px){.grid2{grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);align-items:start}.grid3{grid-template-columns:repeat(3,1fr)}}
-.col{display:grid;gap:18px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:20px;box-shadow:var(--shadow);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);position:relative}
-.card::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;background:linear-gradient(135deg,rgba(91,141,255,.45),transparent 40%,rgba(34,211,238,.25));-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
-.card-h{display:flex;align-items:center;gap:12px;margin-bottom:14px}
-.chip{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;background:linear-gradient(135deg,rgba(47,107,255,.35),rgba(34,211,238,.18));border:1px solid var(--line2);color:var(--cyan);box-shadow:0 0 18px rgba(47,107,255,.3);flex:none}
-.card-h p{color:var(--muted);font-size:.85rem}
-.muted{color:var(--muted)}.small{font-size:.84rem}
-
-/* form */
-label.lbl{display:block;font-weight:600;margin-bottom:8px;font-size:.92rem}
-.field{position:relative}
-.field .ic{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--cyan)}
-input[type=text],input[type=url],input[type=password]{width:100%;font:inherit;color:var(--text);background:rgba(4,10,24,.7);border:1px solid var(--line2);border-radius:14px;padding:14px 16px;transition:.2s}
-.field input{padding-left:44px;font-family:var(--mono);font-size:1.1rem;letter-spacing:.08em}
-input:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 0 3px rgba(34,211,238,.2),0 0 24px rgba(34,211,238,.18)}
-input[aria-invalid=true]{border-color:var(--err);box-shadow:0 0 0 3px rgba(251,113,133,.18)}
-.row{display:flex;justify-content:space-between;gap:10px;margin-top:8px;font-size:.8rem;color:var(--muted)}
-.err{color:#ffc2cb;font-size:.88rem;margin-top:10px;display:flex;gap:8px;align-items:flex-start}
-.err[hidden]{display:none}
-.btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:46px;padding:11px 18px;border-radius:14px;border:1px solid var(--line2);font:inherit;font-weight:600;font-size:.93rem;color:var(--text);background:var(--card2);cursor:pointer;text-decoration:none;transition:.2s}
-.btn:hover{border-color:var(--cyan);transform:translateY(-1px)}
-.btn:active{transform:none}
-.btn.primary{background:linear-gradient(135deg,var(--blue),#1fb5d6);border-color:transparent;color:#fff;box-shadow:0 6px 24px rgba(47,107,255,.45)}
-.btn.primary:hover{box-shadow:0 8px 30px rgba(34,211,238,.45)}
-.btn.danger{border-color:rgba(251,113,133,.5);color:#ffc2cb}
-.btn.sm{min-height:38px;padding:7px 12px;font-size:.84rem;border-radius:11px}
-.btn[disabled]{opacity:.5;cursor:not-allowed;transform:none}
-.spin{width:18px;height:18px;border-radius:50%;border:2.5px solid rgba(255,255,255,.3);border-top-color:#fff;animation:sp .7s linear infinite}
-@keyframes sp{to{transform:rotate(360deg)}}
-
-/* result */
-.state{display:flex;gap:12px;align-items:flex-start;padding:14px;border-radius:14px;border:1px solid var(--line2);background:rgba(4,10,24,.5);margin-bottom:14px}
-.state .ic{width:24px;height:24px;margin-top:2px}
-.state.ok{border-color:rgba(52,211,153,.45);color:#c9f7e4}.state.ok .ic{color:var(--ok)}
-.state.warn{border-color:rgba(251,191,36,.45);color:#fdecb5}.state.warn .ic{color:var(--warn)}
-.state.bad{border-color:rgba(251,113,133,.5);color:#ffd0d6}.state.bad .ic{color:var(--err)}
-.state b{display:block;color:var(--text)}
-.state span{font-size:.88rem;opacity:.92}
-.idle{text-align:center;padding:26px 8px;color:var(--muted)}
-.idle .ic{width:46px;height:46px;color:var(--blue2);margin-bottom:10px;opacity:.8}
-.skel{height:14px;border-radius:7px;background:linear-gradient(90deg,rgba(255,255,255,.05),rgba(255,255,255,.14),rgba(255,255,255,.05));background-size:200% 100%;animation:sh 1.2s infinite;margin:12px 0}
-@keyframes sh{to{background-position:-200% 0}}
-.parts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0 14px}
-.part{background:rgba(4,10,24,.55);border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center}
-.part small{display:block;color:var(--muted);font-size:.7rem;text-transform:uppercase;letter-spacing:.08em}
-.part code{font-family:var(--mono);color:var(--cyan);font-size:1.02rem;word-break:break-all}
-.notice{font-size:.84rem;color:var(--muted);border-left:3px solid var(--blue2);padding:6px 12px;margin:12px 0;background:rgba(47,107,255,.08);border-radius:0 10px 10px 0}
-.tracker{border-top:1px dashed var(--line2);margin-top:14px;padding-top:14px}
-.check{display:flex;gap:10px;align-items:flex-start;font-size:.86rem;color:var(--muted);margin:10px 0;cursor:pointer}
-.check input{width:20px;height:20px;accent-color:var(--cyan);flex:none;margin-top:2px}
-
-/* map */
-#map{height:min(58vh,460px);min-height:320px;border-radius:14px;border:1px solid var(--line2);overflow:hidden;background:#07101f;position:relative;z-index:1}
-.leaflet-tile-pane{filter:invert(1) hue-rotate(185deg) brightness(.92) contrast(.92) saturate(.65)}
-.leaflet-container{font-family:var(--font)}
-.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--navy2);color:var(--text);border:1px solid var(--line2)}
-.leaflet-bar a{background:var(--navy2);color:var(--text);border-color:var(--line)}
-.leaflet-bar a:hover{background:var(--blue)}
-.leaflet-control-attribution{background:rgba(5,9,19,.75)!important;color:var(--muted)!important}
-.leaflet-control-attribution a{color:var(--cyan)!important}
-.mapwrap{position:relative}
-.mapEmpty{position:absolute;left:12px;right:12px;bottom:12px;z-index:500;background:rgba(5,9,19,.88);border:1px solid var(--line2);border-radius:14px;padding:12px 14px;font-size:.86rem;pointer-events:none;display:flex;gap:10px}
-.mapEmpty .ic{color:var(--warn);width:22px;height:22px}
-.mapEmpty[hidden]{display:none}
-.mapFail{padding:30px;text-align:center;color:var(--muted)}
-.pin{width:22px;height:22px;border-radius:50%;background:var(--cyan);border:3px solid #fff;box-shadow:0 0 0 0 rgba(34,211,238,.7);animation:pulse 1.8s infinite}
-@keyframes pulse{70%{box-shadow:0 0 0 18px rgba(34,211,238,0)}100%{box-shadow:0 0 0 0 rgba(34,211,238,0)}}
-.no-motion .pin{animation:none}
-dl.info{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin-top:14px;font-size:.88rem}
-dl.info dt{color:var(--muted)}dl.info dd{word-break:break-word}
-
-/* lists */
-.list{display:grid;gap:10px}
-.item{display:flex;gap:12px;align-items:center;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:rgba(4,10,24,.45);flex-wrap:wrap}
-.item code{font-family:var(--mono);color:var(--cyan);letter-spacing:.06em}
-.item .grow{flex:1;min-width:160px}
-.item small{color:var(--muted);display:block}
-.empty{padding:22px;text-align:center;color:var(--muted);border:1px dashed var(--line2);border-radius:14px;font-size:.9rem}
-details.acc{border:1px solid var(--line);border-radius:16px;background:var(--card);margin-bottom:12px;overflow:hidden}
-details.acc summary{display:flex;align-items:center;gap:12px;padding:16px 18px;cursor:pointer;font-weight:600;list-style:none}
-details.acc summary::-webkit-details-marker{display:none}
-details.acc summary::after{content:"";margin-left:auto;width:9px;height:9px;border-right:2px solid var(--cyan);border-bottom:2px solid var(--cyan);transform:rotate(45deg);transition:.25s}
-details.acc[open] summary::after{transform:rotate(-135deg)}
-details.acc[open]{border-color:var(--line2);box-shadow:0 0 24px rgba(47,107,255,.2)}
-.acc-b{padding:0 18px 18px;color:#cdd9f2}
-.acc-b ol{padding-left:22px;display:grid;gap:8px;margin:6px 0 14px}
-.acc-b li::marker{color:var(--cyan);font-weight:700}
-.tag{display:inline-block;font-size:.72rem;padding:3px 9px;border-radius:999px;background:rgba(251,191,36,.14);color:#fde8a8;border:1px solid rgba(251,191,36,.35);margin-left:6px}
-.warnbox{border:1px solid rgba(251,113,133,.45);background:rgba(251,113,133,.08);border-radius:16px;padding:16px 18px}
-.warnbox ul,.plain{padding-left:20px;display:grid;gap:7px;margin-top:8px}
-.switch{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--line)}
-.switch:last-of-type{border:0}
-.switch input{width:46px;height:26px;appearance:none;-webkit-appearance:none;background:#1b2a4d;border-radius:999px;position:relative;cursor:pointer;transition:.2s;border:1px solid var(--line2);flex:none}
-.switch input::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.2s}
-.switch input:checked{background:linear-gradient(135deg,var(--blue),var(--cyan))}
-.switch input:checked::after{left:23px}
-pre{background:rgba(4,10,24,.8);border:1px solid var(--line);border-radius:12px;padding:12px;overflow:auto;font-family:var(--mono);font-size:.78rem;color:#bcd0f5;margin:8px 0}
-.stack{display:grid;gap:14px}
-.two{display:grid;gap:18px}
-@media(min-width:900px){.two{grid-template-columns:1fr 1fr}}
-
-/* toast + dialog */
-#toasts{position:fixed;right:14px;left:14px;bottom:92px;z-index:200;display:grid;gap:10px;justify-items:end;pointer-events:none}
-@media(min-width:900px){#toasts{bottom:24px;left:auto;width:380px}}
-.toast{pointer-events:auto;display:flex;gap:10px;align-items:flex-start;max-width:420px;padding:13px 16px;border-radius:14px;background:var(--navy2);border:1px solid var(--line2);box-shadow:var(--shadow);animation:enter .3s;font-size:.9rem}
-.toast.success{border-color:rgba(52,211,153,.55)}.toast.success .ic{color:var(--ok)}
-.toast.error{border-color:rgba(251,113,133,.6)}.toast.error .ic{color:var(--err)}
-.toast.info .ic{color:var(--cyan)}
-dialog{border:1px solid var(--line2);border-radius:20px;background:var(--navy2);color:var(--text);padding:0;width:min(92vw,440px);box-shadow:0 20px 70px rgba(0,0,0,.7)}
-dialog::backdrop{background:rgba(2,5,12,.72);backdrop-filter:blur(4px)}
-.dlg-b{padding:22px}
-.dlg-b h3{margin-bottom:8px;display:flex;gap:10px;align-items:center}
-.dlg-b .btns{justify-content:flex-end}
-footer{max-width:1200px;margin:0 auto;padding:0 16px 30px;color:var(--muted);font-size:.78rem;text-align:center}
-@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+:root{color-scheme:dark;--bg:#070d1a;--panel:#0d1728;--panel2:#101f34;--line:rgba(148,190,230,.15);--text:#edf6ff;--muted:#8da3bd;--blue:#388bff;--cyan:#42e5ff;--green:#55e6b0;--amber:#ffd27a;--red:#ff7388;--radius:20px;--shadow:0 18px 55px rgba(0,0,0,.25)}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(ellipse at 12% -10%,rgba(31,102,204,.23),transparent 42%),radial-gradient(ellipse at 100% 20%,rgba(28,193,221,.08),transparent 34%),var(--bg);color:var(--text);font:15px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100vh}button,input{font:inherit}button,a{-webkit-tap-highlight-color:transparent}a{color:inherit;text-decoration:none}.app{max-width:1280px;margin:auto;padding:22px 24px 50px}.topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:6px 0 24px;border-bottom:1px solid var(--line)}.brand{display:flex;align-items:center;gap:12px}.logo{width:44px;height:44px;border-radius:14px;background:linear-gradient(135deg,#1972f5,#36d7ef);display:grid;place-items:center;box-shadow:0 0 32px rgba(56,139,255,.28)}.brand-name{font-size:17px;font-weight:800;letter-spacing:.01em}.brand-sub{font-size:11px;color:var(--muted);letter-spacing:.13em;text-transform:uppercase}.top-actions{display:flex;align-items:center;gap:10px}.service-pill{display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(255,210,122,.22);background:rgba(255,210,122,.07);color:var(--amber);padding:8px 12px;border-radius:999px;font-size:12px}.dot{width:7px;height:7px;border-radius:50%;background:currentColor;box-shadow:0 0 12px currentColor}.icon-btn,.btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;border:1px solid var(--line);border-radius:12px;background:#132239;color:var(--text);padding:11px 14px;cursor:pointer;transition:.2s ease;font-weight:650}.icon-btn{padding:10px}.btn:hover,.icon-btn:hover{transform:translateY(-1px);border-color:rgba(66,229,255,.45)}.btn-primary{background:linear-gradient(110deg,#176bf0,#168fdb);border-color:transparent;box-shadow:0 8px 26px rgba(30,119,244,.2)}.btn-secondary{background:rgba(66,229,255,.07);border-color:rgba(66,229,255,.2);color:#a9f5ff}.btn-danger{background:rgba(255,115,136,.08);border-color:rgba(255,115,136,.22);color:#ff9cab}.btn-small{font-size:12px;padding:8px 10px}.hero{display:grid;grid-template-columns:1.25fr .75fr;gap:20px;padding:28px 0 22px}.eyebrow{display:inline-flex;align-items:center;gap:8px;color:var(--cyan);font-size:11px;font-weight:800;letter-spacing:.16em;text-transform:uppercase}.hero h1{font-size:clamp(30px,4vw,48px);line-height:1.08;letter-spacing:-.045em;margin:13px 0 14px;max-width:720px}.gradient-text{background:linear-gradient(95deg,#fff 12%,#84c9ff 52%,#50e7ef);color:transparent;background-clip:text}.hero p{color:var(--muted);max-width:670px;margin:0;font-size:15px}.hero-card,.panel,.stat-card{background:linear-gradient(145deg,rgba(17,32,54,.94),rgba(10,20,36,.95));border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}.hero-card{padding:20px;display:flex;flex-direction:column;justify-content:space-between;min-height:190px;position:relative;overflow:hidden}.hero-card:after{content:"";position:absolute;width:200px;height:200px;border-radius:50%;border:1px solid rgba(66,229,255,.12);right:-50px;top:-60px;box-shadow:0 0 0 20px rgba(66,229,255,.025),0 0 0 42px rgba(66,229,255,.02)}.hero-card-top{display:flex;align-items:center;justify-content:space-between;color:var(--muted);font-size:12px}.orb{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;color:var(--cyan);background:rgba(66,229,255,.08);border:1px solid rgba(66,229,255,.2)}.hero-card strong{font-size:22px;display:block;margin:12px 0 4px}.hero-card small{color:var(--muted)}.layout{display:grid;grid-template-columns:minmax(0,1.12fr) minmax(320px,.88fr);gap:20px;align-items:start}.stack{display:grid;gap:20px}.panel{padding:22px;min-width:0}.panel-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:18px}.panel-heading h2{font-size:17px;margin:0 0 4px;letter-spacing:-.02em}.panel-heading p{font-size:12px;color:var(--muted);margin:0}.kicker{font-size:10px;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);font-weight:800}.field-label{display:block;font-size:12px;font-weight:750;color:#c4d5e8;margin:0 0 8px}.input-wrap{display:flex;align-items:center;gap:10px;border:1px solid rgba(127,167,208,.25);background:rgba(4,11,22,.58);border-radius:13px;padding:0 12px;transition:.2s}.input-wrap:focus-within{border-color:rgba(66,229,255,.7);box-shadow:0 0 0 3px rgba(66,229,255,.08)}.input-wrap input{width:100%;min-width:0;background:transparent;border:0;outline:0;color:var(--text);padding:15px 0;font-size:16px;letter-spacing:.12em}.input-wrap input::placeholder{color:#4f6681;letter-spacing:.04em}.input-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}.helper{color:var(--muted);font-size:11px;margin:10px 0 0}.message{display:none;margin-top:13px;padding:11px 12px;border-radius:11px;font-size:12px}.message.show{display:block}.message.error{color:#ff9cab;background:rgba(255,115,136,.08);border:1px solid rgba(255,115,136,.2)}.message.success{color:#8df2c9;background:rgba(85,230,176,.08);border:1px solid rgba(85,230,176,.2)}.message.info{color:#a9d8ff;background:rgba(56,139,255,.08);border:1px solid rgba(56,139,255,.2)}.result-box{margin-top:18px;padding:15px;border:1px solid var(--line);border-radius:14px;background:rgba(3,10,20,.3)}.result-top{display:flex;align-items:center;justify-content:space-between;gap:10px}.result-top strong{font-size:13px}.status-tag{font-size:10px;font-weight:800;border-radius:999px;padding:5px 8px;color:var(--amber);background:rgba(255,210,122,.08);border:1px solid rgba(255,210,122,.18)}.result-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}.result-item span{display:block;font-size:10px;color:var(--muted);margin-bottom:4px}.result-item strong{font-size:12px;font-weight:650;overflow-wrap:anywhere}.map-frame{position:relative;min-height:270px;border-radius:15px;overflow:hidden;border:1px solid var(--line);background:#0b1728}.map-placeholder{min-height:270px;display:grid;place-items:center;text-align:center;padding:24px;background:radial-gradient(ellipse at 50% 40%,rgba(35,118,184,.18),transparent 50%),linear-gradient(rgba(66,229,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(66,229,255,.025) 1px,transparent 1px);background-size:auto,28px 28px,28px 28px}.map-placeholder .map-icon{width:54px;height:54px;border:1px solid rgba(66,229,255,.2);border-radius:17px;display:grid;place-items:center;margin:0 auto 12px;color:var(--cyan);background:rgba(66,229,255,.07)}.map-placeholder strong{display:block;font-size:14px;margin-bottom:6px}.map-placeholder p{max-width:320px;color:var(--muted);font-size:12px;margin:0 auto}.map-meta{display:flex;justify-content:space-between;gap:10px;color:var(--muted);font-size:10px;margin-top:10px;flex-wrap:wrap}.leaflet-container{height:270px;width:100%;background:#0b1728}.map-notice{padding:10px 12px;font-size:11px;color:var(--muted);border-top:1px solid var(--line)}.feature-list{display:grid;gap:10px}.feature{display:flex;gap:12px;padding:12px;border:1px solid var(--line);border-radius:13px;background:rgba(4,12,24,.28)}.feature-icon{width:37px;height:37px;flex:0 0 37px;display:grid;place-items:center;border-radius:11px;background:rgba(56,139,255,.1);color:#86c0ff}.feature strong{font-size:12px;display:block;margin:1px 0 3px}.feature p{font-size:11px;color:var(--muted);margin:0}.feature .feature-action{margin-left:auto;align-self:center;flex-shrink:0}.history-list{display:grid;gap:9px}.empty-state{text-align:center;padding:20px 10px;color:var(--muted);font-size:12px}.history-row{display:flex;align-items:center;gap:10px;padding:11px;border:1px solid var(--line);border-radius:12px}.history-icon{width:34px;height:34px;border-radius:10px;background:rgba(56,139,255,.1);color:#8ac5ff;display:grid;place-items:center;flex-shrink:0}.history-copy{min-width:0;flex:1}.history-copy strong{display:block;font-size:12px;letter-spacing:.08em}.history-copy small{display:block;color:var(--muted);font-size:10px}.history-row button{border:0;background:transparent;color:var(--muted);cursor:pointer;padding:6px}.privacy-note{display:flex;gap:10px;padding:13px;border-radius:13px;border:1px solid rgba(85,230,176,.16);background:rgba(85,230,176,.045);color:#a7d9c9;font-size:11px}.privacy-note svg{flex-shrink:0;color:var(--green)}.footer{padding:28px 0 0;color:#657b95;font-size:11px;display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}.footer a{color:#9ab3ce;text-decoration:underline;text-underline-offset:3px}.toast{position:fixed;z-index:1000;bottom:22px;left:50%;transform:translate(-50%,20px);opacity:0;pointer-events:none;background:#13253b;border:1px solid rgba(66,229,255,.28);box-shadow:var(--shadow);border-radius:12px;padding:12px 16px;font-size:12px;max-width:calc(100% - 32px);transition:.25s}.toast.visible{opacity:1;transform:translate(-50%,0)}.modal-backdrop{display:none;position:fixed;inset:0;background:rgba(1,5,12,.78);z-index:500;align-items:center;justify-content:center;padding:18px}.modal-backdrop.open{display:flex}.modal{width:min(460px,100%);padding:22px;border:1px solid var(--line);border-radius:20px;background:#0d192a;box-shadow:var(--shadow)}.modal h3{margin:0 0 8px}.modal p,.modal li{color:var(--muted);font-size:12px}.modal-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:18px}.loading{display:none;width:14px;height:14px;border:2px solid rgba(255,255,255,.35);border-top-color:white;border-radius:50%;animation:spin .7s linear infinite}.is-loading .loading{display:inline-block}.is-loading .search-label{display:none}@keyframes spin{to{transform:rotate(360deg)}}@media(max-width:900px){.hero{grid-template-columns:1fr}.hero-card{min-height:150px}.layout{grid-template-columns:1fr}.app{padding:16px 15px 38px}.panel{padding:18px}}@media(max-width:480px){.topbar{align-items:flex-start}.brand-name{font-size:14px}.brand-sub{font-size:9px}.service-pill{font-size:10px;padding:7px 9px}.top-actions .btn{padding:9px;font-size:11px}.hero{padding-top:22px}.hero h1{font-size:32px}.panel-heading{margin-bottom:14px}.input-actions .btn{flex:1}.result-grid{grid-template-columns:1fr 1fr}.footer{display:block}.footer span{display:block;margin-bottom:8px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}}
 </style>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 </head>
 <body>
-<a class="skip" href="#main">Lewati ke konten utama</a>
-
-<!-- Sprite ikon SVG inline -->
-<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
-  <defs>
-    <symbol id="i-device" viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="2.5"/><path d="M11 18h2"/></symbol>
-    <symbol id="i-gps" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></symbol>
-    <symbol id="i-imei" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10v4M10 10v4M13 10v4M17 10v4"/></symbol>
-    <symbol id="i-map" viewBox="0 0 24 24"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/></symbol>
-    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
-    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 2.5 4 5.5v6c0 5 3.4 8.6 8 10 4.6-1.4 8-5 8-10v-6z"/><path d="m8.5 12 2.5 2.5 4.5-5"/></symbol>
-    <symbol id="i-history" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></symbol>
-    <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M4.6 4.6l2.1 2.1M17.3 17.3l2.1 2.1M2.5 12h3M18.5 12h3M4.6 19.4l2.1-2.1M17.3 6.7l2.1-2.1"/></symbol>
-    <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M9.5 9.2a2.6 2.6 0 1 1 3.6 2.4c-.8.4-1.1.9-1.1 1.8M12 17h.01"/></symbol>
-    <symbol id="i-home" viewBox="0 0 24 24"><path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10"/></symbol>
-    <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5M8 7h7"/></symbol>
-    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></symbol>
-    <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 16v-5a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 21h4"/></symbol>
-    <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></symbol>
-    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 14h10l1-14M10 11v6M14 11v6"/></symbol>
-    <symbol id="i-ext" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4 10 14M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></symbol>
-    <symbol id="i-check" viewBox="0 0 24 24"><path d="m4 12 5 5L20 6"/></symbol>
-    <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3 2 20h20z"/><path d="M12 10v5M12 18h.01"/></symbol>
-    <symbol id="i-x" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="m9 9 6 6M15 9l-6 6"/></symbol>
-    <symbol id="i-sim" viewBox="0 0 24 24"><path d="M6 2h8l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><rect x="8" y="12" width="8" height="6" rx="1"/></symbol>
-    <symbol id="i-wifi" viewBox="0 0 24 24"><path d="M2 9a15 15 0 0 1 20 0M5.5 12.5a10 10 0 0 1 13 0M9 16a5 5 0 0 1 6 0M12 19.5h.01"/></symbol>
-    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M12 11v6M12 7.5h.01"/></symbol>
-    <symbol id="i-flag" viewBox="0 0 24 24"><path d="M5 22V3M5 4h12l-2 4 2 4H5"/></symbol>
-    <symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="m11 12 9-9M16 7l3 3"/></symbol>
-    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
-    <symbol id="i-server" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="6" rx="1.5"/><rect x="3" y="14" width="18" height="6" rx="1.5"/><path d="M7 7h.01M7 17h.01"/></symbol>
-    <symbol id="i-reset" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 1 3 6.7L3 16"/><path d="M3 21v-5h5"/></symbol>
-    <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></symbol>
-  </defs>
+<svg aria-hidden="true" width="0" height="0" style="position:absolute;overflow:hidden">
+<symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3 20 6v5c0 5-3.4 8.4-8 10-4.6-1.6-8-5-8-10V6l8-3Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="m8.5 12 2.2 2.2 4.8-5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-pin" viewBox="0 0 24 24"><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="10" r="2.5" fill="none" stroke="currentColor" stroke-width="1.7"/></symbol>
+<symbol id="i-device" viewBox="0 0 24 24"><rect x="5" y="2.5" width="14" height="19" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M10 5h4M10 18.5h4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.8" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m16 16 5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+<symbol id="i-map" viewBox="0 0 24 24"><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3V6Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M9 3v15m6-12v15" stroke="currentColor" stroke-width="1.6"/></symbol>
+<symbol id="i-history" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 2.6-6.4L3 8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M3 3v5h5m4-1v5l3 2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M9.6 9a2.5 2.5 0 1 1 4.5 1.5c-1.1 1.2-2.1 1.4-2.1 3M12 17.3h.01" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
+<symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="13" rx="2" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M16 8V5a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h2" fill="none" stroke="currentColor" stroke-width="1.7"/></symbol>
+<symbol id="i-lock" viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M8 10V7a4 4 0 0 1 8 0v3m-4 5v2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
+<symbol id="i-external" viewBox="0 0 24 24"><path d="M14 4h6v6m0-6-9 9" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M18 13v5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6m4-6v6M6 7l1 14h10l1-14M9 7V4h6v3" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
 </svg>
+<div class="app">
+<header class="topbar">
+  <a class="brand" href="#" aria-label="IMEI Locator beranda">
+    <span class="logo"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 2.5 20 6v5.2c0 5-3.5 8.2-8 10.3-4.5-2.1-8-5.3-8-10.3V6l8-3.5Z" stroke="white" stroke-width="1.6"/><path d="M12 7v9m-4.5-4.5h9" stroke="white" stroke-width="1.6" stroke-linecap="round"/></svg></span>
+    <span><span class="brand-name">IMEI LOCATOR</span><span class="brand-sub" style="display:block">Device Recovery Center</span></span>
+  </a>
+  <div class="top-actions"><span class="service-pill"><span class="dot"></span> <span id="serviceStatus">Layanan belum terhubung</span></span><button class="icon-btn" id="helpTop" aria-label="Bantuan" title="Bantuan"><svg width="19" height="19"><use href="#i-help"/></svg></button></div>
+</header>
 
-<header class="top">
-  <div class="top-in">
-    <div class="brand">
-      <svg viewBox="0 0 48 48" role="img" aria-label
-        
+<section class="hero">
+  <div><span class="eyebrow"><svg width="15" height="15"><use href="#i-shield"/></svg> DEVICE RECOVERY SYSTEM</span>
+    <h1>Temukan langkah tepat untuk <span class="gradient-text">memulihkan perangkat.</span></h1>
+    <p>Pusat bantuan untuk memeriksa format IMEI, membuka layanan pencarian resmi, dan mengamankan perangkat Android yang hilang. Lokasi hanya ditampilkan jika tersedia dari sumber tepercaya.</p>
+  </div>
+  <div class="hero-card"><div class="hero-card-top"><span>STATUS PEMULIHAN</span><span class="orb"><svg width="22" height="22"><use href="#i-pin"/></svg></span></div><div><strong>Siap membantu</strong><small>Gunakan akun dan layanan resmi yang terhubung ke perangkat.</small></div><div style="display:flex;align-items:center;gap:7px;color:var(--green);font-size:11px"><span class="dot"></span> Pemeriksaan lokal aktif</div></div>
+</section>
+
+<div class="layout">
+<main class="stack">
+<section class="panel" id="imeiPanel">
+  <div class="panel-heading"><div><span class="kicker">01 / Pemeriksaan perangkat</span><h2 style="margin-top:5px">Periksa nomor IMEI</h2><p>Validasi format dilakukan di perangkat ini.</p></div><span class="orb"><svg width="21" height="21"><use href="#i-device"/></svg></span></div>
+  <form id="imeiForm" novalidate>
+    <label class="field-label" for="imeiInput">Nomor IMEI perangkat (15 digit)</label>
+    <div class="input-wrap"><svg width="19" height="19" style="color:var(--muted);flex-shrink:0"><use href="#i-device"/></svg><input id="imeiInput" type="text" inputmode="numeric" autocomplete="off" maxlength="17" placeholder="Contoh: 123456789012345" aria-describedby="imeiHelp imeiMessage"><button class="icon-btn" id="clearInput" type="button" aria-label="Hapus input" title="Hapus"><svg width="17" height="17"><use href="#i-trash"/></svg></button></div>
+    <p class="helper" id="imeiHelp">Masukkan angka saja. IMEI tidak dikirim ke server oleh pemeriksaan ini.</p>
+    <div class="input-actions"><button class="btn btn-primary" id="checkBtn" type="submit"><svg width="17" height="17"><use href="#i-search"/></svg><span class="search-label">Periksa format IMEI</span><span class="loading" aria-hidden="true"></span></button><button class="btn btn-secondary" type="button" id="findDevice"><svg width="17" height="17"><use href="#i-external"/></svg>Buka Find Hub</button></div>
+    <div id="imeiMessage" class="message" role="status" aria-live="polite"></div>
+  </form>
+  <div class="result-box" aria-live="polite"><div class="result-top"><strong>Hasil pemeriksaan</strong><span class="status-tag" id="resultStatus">BELUM DIPERIKSA</span></div><div class="result-grid"><div class="result-item"><span>Validasi format</span><strong id="formatResult">Belum tersedia</strong></div><div class="result-item"><span>Status lokasi</span><strong id="locationResult">Belum tersedia</strong></div><div class="result-item"><span>Sumber lokasi</span><strong id="sourceResult">Tidak terhubung</strong></div><div class="result-item"><span>Waktu pembaruan</span><strong id="updatedResult">Belum tersedia</strong></div></div><div class="input-actions" style="margin-top:14px"><button class="btn btn-small" id="copyImei" type="button"><svg width="15" height="15"><use href="#i-copy"/></svg>Salin IMEI</button><button class="btn btn-small btn-secondary" id="saveHistory" type="button">Simpan ke riwayat lokal</button></div></div>
+</section>
+
+<section class="panel" id="mapPanel">
+  <div class="panel-heading"><div><span class="kicker">02 / Peta perangkat</span><h2 style="margin-top:5px">Lokasi perangkat</h2><p>Marker hanya muncul setelah koordinat sah tersedia.</p></div><span class="orb"><svg width="21" height="21"><use href="#i-map"/></svg></span></div>
+  <div class="map-frame"><div id="map" style="display:none" aria-label="Peta lokasi perangkat"></div><div class="map-placeholder" id="mapPlaceholder"><div><div class="map-icon"><svg width="27" height="27"><use href="#i-pin"/></svg></div><strong>Lokasi belum tersedia</strong><p>Halaman ini belum terhubung ke layanan resmi yang menyediakan koordinat perangkat. IMEI saja tidak menghasilkan lokasi GPS.</p></div></div></div>
+  <div class="map-meta"><span id="mapSource">Sumber: belum ada</span><span id="mapUpdated">Belum ada pembaruan</span></div>
+  <div class="map-notice">Peta dasar membutuhkan koneksi internet. Membuka peta tidak berarti perangkat sudah ditemukan.</div>
+</section>
+
+<section class="panel" id="historyPanel">
+  <div class="panel-heading"><div><span class="kicker">03 / Aktivitas lokal</span><h2 style="margin-top:5px">Riwayat pemeriksaan</h2><p>Disimpan hanya pada browser ini jika kamu memilih menyimpan.</p></div><button class="btn btn-small btn-danger" id="clearHistory" type="button"><svg width="14" height="14"><use href="#i-trash"/></svg>Hapus</button></div>
+  <div id="historyList" class="history-list"><div class="empty-state">Belum ada riwayat tersimpan.</div></div>
+</section>
+</main>
+
+<aside class="stack">
+<section class="panel"><div class="panel-heading"><div><span class="kicker">Pusat pemulihan</span><h2 style="margin-top:5px">Tindakan yang disarankan</h2><p>Gunakan layanan resmi untuk perangkat milikmu.</p></div></div>
+<div class="feature-list">
+  <div class="feature"><span class="feature-icon"><svg width="20" height="20"><use href="#i-pin"/></svg></span><div><strong>Google Find Hub</strong><p>Lihat lokasi terakhir, bunyikan, atau amankan perangkat jika tersedia.</p></div><a class="btn btn-small feature-action" href="https://android.com/find" target="_blank" rel="noopener noreferrer" aria-label="Buka Google Find Hub">Buka <svg width="13" height="13"><use href="#i-external"/></svg></a></div>
+  <div class="feature"><span class="feature-icon"><svg width="20" height="20"><use href="#i-lock"/></svg></span><div><strong>Amankan akun Google</strong><p>Periksa keamanan akun dan sesi yang tidak dikenal.</p></div><a class="btn btn-small feature-action" href="https://myaccount.google.com/security" target="_blank" rel="noopener noreferrer">Buka <svg width="13" height="13"><use href="#i-external"/></svg></a></div>
+  <div class="feature"><span class="feature-icon"><svg width="20" height="20"><use href="#i-shield"/></svg></span><div><strong>Laporkan kehilangan</strong><p>Siapkan bukti kepemilikan dan IMEI untuk laporan resmi.</p></div><button class="btn btn-small feature-action" id="reportGuide" type="button">Panduan</button></div>
+  <div class="feature"><span class="feature-icon"><svg width="20" height="20"><use href="#i-device"/></svg></span><div><strong>Amankan kartu SIM</strong><p>Hubungi operator untuk menonaktifkan SIM yang hilang.</p></div><button class="btn btn-small feature-action" id="simGuide" type="button">Panduan</button></div>
+</div></section>
+
+<section class="panel"><div class="panel-heading"><div><span class="kicker">Privasi & keamanan</span><h2 style="margin-top:5px">Data tetap terkendali</h2></div><span class="orb"><svg width="21" height="21"><use href="#i-shield"/></svg></span></div>
+<div class="privacy-note"><svg width="18" height="18"><use href="#i-shield"/></svg><span>Validasi IMEI dilakukan secara lokal. Riwayat bersifat opsional dan disimpan di browser. Jangan masukkan kata sandi, OTP, atau data pembayaran ke situs pelacak tidak tepercaya.</span></div>
+<div style="margin-top:14px;display:grid;gap:9px"><button class="btn btn-secondary" id="openFindHub" type="button" style="width:100%"><svg width="17" height="17"><use href="#i-pin"/></svg>Buka layanan pelacakan resmi</button><button class="btn" id="helpButton" type="button" style="width:100%"><svg width="17" height="17"><use href="#i-help"/></svg>Lihat panduan pemulihan</button></div></section>
+
+<section class="panel" id="helpPanel"><div class="panel-heading"><div><span class="kicker">Pusat bantuan</span><h2 style="margin-top:5px">Pertanyaan penting</h2></div></div>
+<div class="feature-list">
+<div class="feature"><div><strong>Bisakah IMEI melacak GPS langsung?</strong><p>Tidak. IMEI adalah pengenal perangkat, bukan tautan lokasi publik. Lokasi perlu berasal dari layanan yang sah dan memiliki izin.</p></div></div>
+<div class="feature"><div><strong>Kenapa lokasi tidak muncul?</strong><p>Perangkat mungkin offline, fitur lokasi tidak tersedia, atau akun tidak terhubung. Periksa Find Hub dengan akun Google perangkat.</p></div></div>
+<div class="feature"><div><strong>Bagaimana jika dicuri?</strong><p>Jangan mendatangi lokasi sendirian. Amankan akun dan SIM, lalu minta bantuan orang tepercaya serta pihak berwenang.</p></div></div>
+</div></section>
+</aside>
+</div>
+<footer class="footer"><span>© <span id="year"></span> IMEI Locator · Device Recovery Center</span><span>Lokasi nyata hanya dari sumber yang sah · <a href="https://support.google.com/android/answer/6160491" target="_blank" rel="noopener noreferrer">Bantuan resmi Android</a></span></footer>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="modal-backdrop" id="modalBackdrop" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><div class="modal"><h3 id="modalTitle">Panduan</h3><div id="modalContent"></div><div class="modal-actions"><button class="btn" id="closeModal" type="button">Tutup</button><a class="btn btn-primary" id="modalLink" href="https://android.com/find" target="_blank" rel="noopener noreferrer">Buka layanan resmi</a></div></div></div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+(() => {
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+  const STORAGE_KEY = 'imeiLocatorHistoryV1';
+  let lastValidImei = '';
+  let toastTimer;
+  let mapInstance = null;
+  $('year').textContent = new Date().getFullYear();
+
+  function toast(message) {
+    const el = $('toast');
+    el.textContent = message;
+    el.classList.add('visible');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('visible'), 2800);
+  }
+  function setMessage(message, type = 'info') {
+    const el = $('imeiMessage');
+    el.textContent = message;
+    el.className = `message show ${type}`;
+  }
+  function clearMessage() {
+    $('imeiMessage').textContent = '';
+    $('imeiMessage').className = 'message';
+  }
+  function onlyDigits(value) { return value.replace(/\D/g, ''); }
+  function validateImei(value) {
+    const digits = onlyDigits(value);
+    if (!digits) return { ok: false, message: 'Masukkan nomor IMEI terlebih dahulu.' };
+    if (!/^\d{15}$/.test(digits)) return { ok: false, message: 'IMEI harus terdiri dari tepat 15 angka.' };
+    let sum = 0;
+    for (let i = 0; i < digits.length; i++) {
+      let n = Number(digits[i]);
+      if (i % 2 === 1) {
+        n *= 2;
+        if (n > 9) n -= 9;
+      }
+      sum += n;
+    }
+    if (sum % 10 !== 0) return { ok: false, message: 'Digit pemeriksa IMEI tidak cocok dengan algoritma Luhn. Periksa kembali angka yang dimasukkan.' };
+    return { ok: true, digits };
+  }
+  function formatDate(date = new Date()) {
+    return new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium', timeStyle: 'short' }).format(date);
+  }
+  function updateResults(valid, digits = '') {
+    $('resultStatus').textContent = valid ? 'FORMAT VALID' : 'BELUM DIPERIKSA';
+    $('formatResult').textContent = valid ? 'Lulus pemeriksaan Luhn' : 'Belum tersedia';
+    $('locationResult').textContent = 'Belum tersedia';
+    $('sourceResult').textContent = 'Tidak terhubung';
+    $('updatedResult').textContent = 'Belum tersedia';
+    $('serviceStatus').textContent = 'Layanan belum terhubung';
+    $('mapSource').textContent = 'Sumber: belum ada';
+    $('mapUpdated').textContent = 'Belum ada pembaruan';
+    if (valid) {
+      setMessage('Format IMEI lolos pemeriksaan digit. Ini tidak membuktikan kepemilikan, status online, atau lokasi perangkat.', 'success');
+      lastValidImei = digits;
+    }
+  }
+  $('imeiInput').addEventListener('input', (event) => {
+    const clean = onlyDigits(event.target.value).slice(0, 15);
+    event.target.value = clean;
+    clearMessage();
+  });
+  $('clearInput').addEventListener('click', () => {
+    $('imeiInput').value = '';
+    lastValidImei = '';
+    clearMessage();
+    $('resultStatus').textContent = 'BELUM DIPERIKSA';
+    $('formatResult').textContent = 'Belum tersedia';
+    toast('Input IMEI telah dihapus.');
+  });
+  $('imeiForm').addEventListener('submit', (event) => {
+    event.preventDefault();
+    const button = $('checkBtn');
+    const result = validateImei($('imeiInput').value);
+    if (!result.ok) {
+      lastValidImei = '';
+      $('resultStatus').textContent = 'PERLU DIPERIKSA';
+      $('formatResult').textContent = 'Tidak valid';
+      setMessage(result.message, 'error');
+      return;
+    }
+    button.classList.add('is-loading');
+    button.disabled = true;
+    // This is a local format check, not a remote device-location request.
+    setTimeout(() => {
+      button.classList.remove('is-loading');
+      button.disabled = false;
+      updateResults(true, result.digits);
+    }, 450);
+  });
+  $('findDevice').addEventListener('click', () => window.open('https://android.com/find', '_blank', 'noopener,noreferrer'));
+  $('openFindHub').addEventListener('click', () => window.open('https://android.com/find', '_blank', 'noopener,noreferrer'));
+  $('copyImei').addEventListener('click', async () => {
+    const result = validateImei($('imeiInput').value);
+    if (!result.ok) { toast('Masukkan IMEI yang valid terlebih dahulu.'); return; }
+    const agreed = window.confirm('Salin nomor IMEI ke clipboard perangkat ini? Pastikan kamu tidak membagikannya ke pihak yang tidak tepercaya.');
+    if (!agreed) return;
+    try {
+      await navigator.clipboard.writeText(result.digits);
+      toast('IMEI disalin ke clipboard.');
+    } catch (_) {
+      const temp = document.createElement('textarea');
+      temp.value = result.digits;
+      temp.style.position = 'fixed'; temp.style.opacity = '0';
+      document.body.appendChild(temp); temp.select();
+      const copied = document.execCommand('copy'); temp.remove();
+      toast(copied ? 'IMEI disalin ke clipboard.' : 'Clipboard tidak tersedia. Salin secara manual.');
+    }
+  });
+  function getHistory() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+      return Array.isArray(parsed) ? parsed.filter(x => x && /^\d{15}$/.test(x.imei) && typeof x.date === 'string').slice(0, 30) : [];
+    } catch (_) { return []; }
+  }
+  function renderHistory() {
+    const list = $('historyList');
+    const items = getHistory();
+    list.replaceChildren();
+    if (!items.length) {
+      const empty = document.createElement('div');
+      empty.className = 'empty-state';
+      empty.textContent = 'Belum ada riwayat tersimpan.';
+      list.appendChild(empty);
+      return;
+    }
+    items.forEach((item, index) => {
+      const row = document.createElement('div'); row.className = 'history-row';
+      const icon = document.createElement('span'); icon.className = 'history-icon';
+      icon.innerHTML = '<svg width="17" height="17"><use href="#i-device"></use></svg>';
+      const copy = document.createElement('div'); copy.className = 'history-copy';
+      const imei = document.createElement('strong'); imei.textContent = item.imei;
+      const date = document.createElement('small'); date.textContent = item.date + ' · Format diperiksa lokal';
+      copy.append(imei, date);
+      const load = document.createElement('button'); load.type = 'button'; load.textContent = 'Pilih'; load.setAttribute('aria-label', 'Pilih IMEI riwayat');
+      load.addEventListener('click', () => { $('imeiInput').value = item.imei; toast('IMEI dimasukkan ke kolom. Tekan periksa untuk memvalidasi.'); $('imeiPanel').scrollIntoView({behavior:'smooth'}); });
+      const del = document.createElement('button'); del.type = 'button'; del.setAttribute('aria-label', 'Hapus item riwayat'); del.innerHTML = '<svg width="16" height="16"><use href="#i-trash"></use></svg>';
+      del.addEventListener('click', () => { const next = getHistory(); next.splice(index, 1); localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); renderHistory(); toast('Item riwayat dihapus.'); });
+      row.append(icon, copy, load, del); list.appendChild(row);
+    });
+  }
+  $('saveHistory').addEventListener('click', () => {
+    const result = validateImei($('imeiInput').value);
+    if (!result.ok) { toast(result.message); return; }
+    if (!window.confirm('Simpan nomor IMEI ini di riwayat lokal browser? Siapa pun yang memakai browser ini mungkin dapat melihatnya.')) return;
+    const items = getHistory().filter(x => x.imei !== result.digits);
+    items.unshift({ imei: result.digits, date: formatDate() });
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(items.slice(0, 30)));
+      renderHistory(); toast('Riwayat disimpan secara lokal di browser ini.');
+    } catch (_) { toast('Browser tidak mengizinkan penyimpanan lokal.'); }
+  });
+  $('clearHistory').addEventListener('click', () => {
+    if (!window.confirm('Hapus semua riwayat IMEI yang tersimpan di browser ini?')) return;
+    localStorage.removeItem(STORAGE_KEY); renderHistory(); toast('Semua riwayat lokal dihapus.');
+  });
+  function openModal(title, content, link = 'https://android.com/find', linkText = 'Buka layanan resmi') {
+    $('modalTitle').textContent = title;
+    $('modalContent').replaceChildren();
+    content.forEach(text => { const p = document.createElement('p'); p.textContent = text; $('modalContent').appendChild(p); });
+    $('modalLink').href = link; $('modalLink').textContent = linkText;
+    $('modalBackdrop').classList.add('open'); $('closeModal').focus();
+  }
+  function closeModal() { $('modalBackdrop').classList.remove('open'); }
+  $('closeModal').addEventListener('click', closeModal);
+  $('modalBackdrop').addEventListener('click', e => { if (e.target === $('modalBackdrop')) closeModal(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+  const help = () => openModal('Panduan pemulihan perangkat', [
+    '1. Buka Google Find Hub dan masuk menggunakan akun Google yang terhubung ke perangkat yang hilang.',
+    '2. Pilih perangkat. Jika tersedia, periksa lokasi terakhir, bunyikan perangkat, atau amankan perangkat.',
+    '3. Jika dicuri, jangan menghadapi pelaku sendiri. Hubungi orang tepercaya dan pihak berwenang.',
+    '4. Hubungi operator seluler untuk mengamankan atau memblokir SIM. Siapkan IMEI dan bukti kepemilikan.',
+    'Aplikasi ini tidak memiliki akses ke jaringan operator atau basis data lokasi. Tidak ada lokasi yang diklaim tanpa sumber tepercaya.'
+  ]);
+  $('helpTop').addEventListener('click', help);
+  $('helpButton').addEventListener('click', help);
+  $('reportGuide').addEventListener('click', () => openModal('Melaporkan perangkat hilang', [
+    'Siapkan nomor IMEI dari kotak perangkat, nota, atau dokumen pembelian, serta bukti kepemilikan dan identitas.',
+    'Buat laporan kepada kepolisian atau pihak berwenang setempat. Tanyakan prosedur resmi yang berlaku untuk perangkat hilang.',
+    'Hubungi operator seluler untuk mengamankan nomor dan menanyakan prosedur pemblokiran perangkat yang berlaku.'
+  ], 'https://polri.go.id/', 'Buka situs Polri'));
+  $('simGuide').addEventListener('click', () => openModal('Mengamankan kartu SIM', [
+    'Hubungi kanal layanan resmi operator yang kamu gunakan. Minta pemblokiran SIM lama dan tanyakan proses penggantian kartu.',
+    'Amankan akun penting yang memakai nomor tersebut untuk pemulihan akun. Ganti kata sandi jika kamu menduga akun ikut terpapar.',
+    'Jangan berikan OTP atau kata sandi kepada siapa pun yang mengaku dapat melacak perangkat.'
+  ], 'https://www.komdigi.go.id/', 'Buka situs Komdigi'));
+  renderHistory();
+
+  // Optional map library: an empty base map is deliberately not centered on the user's location
+  // and no device marker is created unless an authorized source supplies real coordinates.
+  if (window.L) {
+    try {
+      mapInstance = L.map('map', { zoomControl: true, scrollWheelZoom: false }).setView([0, 0], 2);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a>'
+      }).addTo(mapInstance);
+      $('mapPlaceholder').style.display = 'none';
+      $('map').style.display = 'block';
+      // Intentionally no marker: no device coordinates have been provided by a trusted source.
+    } catch (_) {
+      $('map').style.display = 'none'; $('mapPlaceholder').style.display = 'grid';
+    }
+  } else {
+    $('mapPlaceholder').querySelector('strong').textContent = 'Peta tidak dapat dimuat';
+    $('mapPlaceholder').querySelector('p').textContent = 'Koneksi internet atau layanan peta tidak tersedia. Gunakan tautan layanan resmi untuk mencari perangkat.';
+  }
+})();
+</script>
+</body>
+</html>
